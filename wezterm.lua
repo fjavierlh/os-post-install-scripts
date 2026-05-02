@@ -44,7 +44,7 @@ config.font_size = 12.0
 config.window_decorations = "RESIZE"
 
 -- Padding interior
-config.window_padding = { left = 8, right = 8, top = 8, bottom = 8 }
+config.window_padding = { left = 8, right = 8, top = 8, bottom = 32 }
 
 -- Tab bar en la parte superior
 config.tab_bar_at_bottom = false
