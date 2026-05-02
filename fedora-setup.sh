@@ -111,7 +111,7 @@ EOF
 install_nerd_fonts() {
     log "Nerd Fonts (JetBrainsMono)"
 
-    if fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd Font"; then
+    if [[ -d "$HOME/.local/share/fonts/JetBrainsMono" ]] && fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd Font"; then
         ok "JetBrainsMono Nerd Font ya instalada, saltando"
         return 0
     fi
@@ -458,6 +458,64 @@ configure_starship() {
     ok "Starship configurado"
 }
 
+install_docker() {
+    log "Docker"
+
+    if is_installed docker-ce; then
+        ok "Docker ya instalado, saltando"
+        return 0
+    fi
+
+    # 1) Limpiar paquetes conflictivos (Fedora puede tener versiones antiguas)
+    local old_pkgs=(docker docker-client docker-client-latest docker-common
+                    docker-latest docker-latest-logrotate docker-logrotate
+                    docker-selinux docker-engine-selinux docker-engine)
+    for pkg in "${old_pkgs[@]}"; do
+        if is_installed "$pkg"; then
+            run "sudo dnf remove -y '$pkg'"
+        fi
+    done
+
+    # 2) Añadir repo oficial de Docker (sintaxis dnf5)
+    local repo_file="/etc/yum.repos.d/docker-ce.repo"
+    if [[ ! -f "$repo_file" ]]; then
+        run "sudo dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo"
+    fi
+
+    # 3) Instalar Docker CE + plugins (buildx y compose incluidos)
+    run "sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+
+    # 4) Configurar el daemon:
+    #    - mirror.gcr.io: evita bloqueos de Telefónica a Cloudflare R2 (donde
+    #      Docker Hub almacena los blobs de imágenes)
+    #    - DNS explícito y MTU reducido por si hay problemas de red
+    if [[ $DRY_RUN -eq 1 ]]; then
+        printf '\033[1;35m[DRY ]\033[0m  Crear /etc/docker/daemon.json\n'
+    else
+        sudo mkdir -p /etc/docker
+        sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
+{
+  "dns": ["8.8.8.8", "1.1.1.1"],
+  "mtu": 1450,
+  "registry-mirrors": ["https://mirror.gcr.io"]
+}
+EOF
+    fi
+
+    # 5) Habilitar e iniciar el servicio
+    run "sudo systemctl enable --now docker"
+
+    # 6) Añadir el usuario actual al grupo docker (evita sudo en cada comando)
+    if ! getent group docker | grep -qw "$USER"; then
+        run "sudo usermod -aG docker \"$USER\""
+        warn "Usuario añadido al grupo docker. Ejecuta 'newgrp docker' para activarlo sin cerrar sesión."
+    else
+        ok "Usuario ya en el grupo docker"
+    fi
+
+    ok "Docker instalado (docker-ce + buildx + compose)"
+}
+
 # ---------- Plantilla para añadir nuevas apps ----------
 #
 # install_<app>() {
@@ -491,6 +549,7 @@ main() {
     install_node_lts      # después de nvm: necesita nvm.sh disponible
     install_starship
     configure_starship    # después de oh-my-zsh: modifica .zshrc
+    install_docker
     # install_<otra_app>
 
     ok "Setup completado"
