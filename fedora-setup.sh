@@ -516,6 +516,21 @@ EOF
     ok "Docker instalado (docker-ce + buildx + compose)"
 }
 
+install_opencode() {
+    log "OpenCode"
+
+    if command -v opencode &>/dev/null; then
+        ok "OpenCode ya instalado ($(opencode --version 2>/dev/null || echo 'versión desconocida')), saltando"
+        return 0
+    fi
+
+    # Instalador oficial: descarga binario nativo a /usr/local/bin
+    # Mismo patrón que starship, sin depender de npm ni Node
+    run "OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash"
+
+    ok "OpenCode instalado. Lanza 'opencode' en cualquier directorio de proyecto."
+}
+
 # ---------- Plantilla para añadir nuevas apps ----------
 #
 # install_<app>() {
@@ -550,6 +565,7 @@ main() {
     install_starship
     configure_starship    # después de oh-my-zsh: modifica .zshrc
     install_docker
+    install_opencode
     # install_<otra_app>
 
     ok "Setup completado"
