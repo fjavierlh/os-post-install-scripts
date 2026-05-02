@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# fedora-setup.sh - Post-install setup para Fedora Workstation
+# fedora-post-install.sh - Post-install setup para Fedora Workstation
 #
 # Uso:
-#   ./fedora-setup.sh           # Ejecuta todas las instalaciones
-#   ./fedora-setup.sh --dry-run # Muestra qué haría sin ejecutarlo
+#   ./fedora-post-install.sh           # Ejecuta todas las instalaciones
+#   ./fedora-post-install.sh --dry-run # Muestra qué haría sin ejecutarlo
 #
 # Requisitos: Fedora con dnf5 (Fedora 41+)
 
