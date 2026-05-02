@@ -566,6 +566,18 @@ install_gh() {
 }
 
 # ---------- Plantilla para añadir nuevas apps ----------
+#
+# install_<app>() {
+#     log "<App>"
+#     if is_installed <paquete>; then
+#         ok "<App> ya instalado, saltando"
+#         return 0
+#     fi
+#     run "sudo dnf install -y <paquete>"
+#     ok "<App> instalado"
+# }
+#
+# Y luego añadir la llamada en main()
 
 # ---------- Main ----------
 main() {
