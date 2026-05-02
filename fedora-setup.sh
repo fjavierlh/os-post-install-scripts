@@ -397,6 +397,67 @@ install_node_lts() {
     ok "Node LTS instalado y configurado como default"
 }
 
+install_starship() {
+    log "Starship"
+
+    if command -v starship &>/dev/null; then
+        ok "Starship ya instalado ($(starship --version | head -1)), saltando"
+        return 0
+    fi
+
+    # Instalador oficial: descarga el binario a /usr/local/bin
+    # SIN sudo en el comando principal; el instalador lo pide internamente si es necesario
+    run 'curl -sS https://starship.rs/install.sh | sh -s -- --yes'
+
+    ok "Starship instalado"
+}
+
+configure_starship() {
+    log "Configuración de Starship"
+
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local source_toml="$script_dir/starship.toml"
+    local zshrc="$HOME/.zshrc"
+    local config_dir="$HOME/.config"
+    local target_toml="$config_dir/starship.toml"
+
+    # 1) Desplegar starship.toml
+    if [[ ! -f "$source_toml" ]]; then
+        warn "No se encuentra $source_toml junto al script. Saltando config de Starship."
+    else
+        run "mkdir -p '$config_dir'"
+        if [[ -f "$target_toml" ]]; then
+            warn "Ya existe $target_toml. Se guardará backup en ${target_toml}.bak"
+            run "cp '$target_toml' '${target_toml}.bak'"
+        fi
+        run "cp '$source_toml' '$target_toml'"
+        ok "~/.config/starship.toml desplegado"
+    fi
+
+    # 2) Desactivar tema de oh-my-zsh para que no compita con starship
+    if [[ $DRY_RUN -eq 1 ]]; then
+        printf '\033[1;35m[DRY ]\033[0m  Desactivar ZSH_THEME en .zshrc\n'
+    else
+        # Cambia cualquier ZSH_THEME="algo" por ZSH_THEME="" 
+        sed -i 's/^ZSH_THEME="[^"]*"/ZSH_THEME=""/' "$zshrc"
+    fi
+
+    # 3) Añadir eval de starship al .zshrc (idempotente)
+    local init_line='eval "$(starship init zsh)"'
+    if grep -qF "$init_line" "$zshrc" 2>/dev/null; then
+        ok "Starship ya inicializado en .zshrc"
+    else
+        if [[ $DRY_RUN -eq 1 ]]; then
+            printf '\033[1;35m[DRY ]\033[0m  Añadir eval starship a .zshrc\n'
+        else
+            printf '\n# Starship prompt\n%s\n' "$init_line" >> "$zshrc"
+        fi
+    fi
+
+    ok "Starship configurado"
+}
+
 # ---------- Plantilla para añadir nuevas apps ----------
 #
 # install_<app>() {
@@ -428,6 +489,8 @@ main() {
     install_nvm
     install_zsh_plugins   # después de nvm: activa el plugin nvm en .zshrc
     install_node_lts      # después de nvm: necesita nvm.sh disponible
+    install_starship
+    configure_starship    # después de oh-my-zsh: modifica .zshrc
     # install_<otra_app>
 
     ok "Setup completado"

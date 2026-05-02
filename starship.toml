@@ -1,0 +1,85 @@
+# ~/.config/starship.toml
+# Prompt orientado a workflow con TypeScript/Node.js y agentes
+# Paleta: Tokyo Night
+
+"$schema" = "https://starship.rs/config-schema.json"
+
+# Formato del prompt: una línea de info + línea de comando separada
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$nodejs\
+$package\
+$cmd_duration\
+$line_break\
+$character"""
+
+# Línea en blanco entre prompts (más legible con output de agentes)
+add_newline = true
+
+# ── Directorio ───────────────────────────────────────────────
+[directory]
+style           = "bold #7aa2f7"   # Tokyo Night blue
+truncation_length = 4
+truncate_to_repo  = true           # Trunca hasta la raíz del repo git
+read_only       = " 󰌾"
+read_only_style = "red"
+
+# ── Git branch ───────────────────────────────────────────────
+[git_branch]
+symbol    = " "
+style     = "#bb9af7"             # Tokyo Night purple
+format    = "[$symbol$branch]($style) "
+truncation_length = 24
+truncation_symbol = "…"
+
+# ── Git status ───────────────────────────────────────────────
+[git_status]
+style     = "#f7768e"             # Tokyo Night red
+format    = "([$all_status$ahead_behind]($style) )"
+ahead     = "⇡${count}"
+behind    = "⇣${count}"
+diverged  = "⇕⇡${ahead_count}⇣${behind_count}"
+staged    = "[+${count}](green) "
+modified  = "[~${count}](yellow) "
+untracked = "[?${count}](blue) "
+deleted   = "[-${count}](red) "
+stashed   = "[≡](blue) "
+
+# ── Git state (rebase, merge, cherry-pick…) ──────────────────
+[git_state]
+style  = "bold yellow"
+format = "[$state($progress_current/$progress_total)]($style) "
+
+# ── Node.js ──────────────────────────────────────────────────
+[nodejs]
+symbol = " "
+style  = "#9ece6a"               # Tokyo Night green
+format = "[$symbol$version]($style) "
+# Solo muestra Node si hay package.json, .nvmrc o .node-version
+detect_files      = ["package.json", ".nvmrc", ".node-version"]
+detect_extensions = []
+detect_folders    = ["node_modules"]
+
+# ── Package version (desde package.json) ─────────────────────
+[package]
+symbol = "󰏗 "
+style  = "#e0af68"               # Tokyo Night yellow
+format = "[$symbol$version]($style) "
+display_private = false
+
+# ── Duración del comando ──────────────────────────────────────
+# Muy útil para saber cuánto tardó un agente o un build
+[cmd_duration]
+min_time           = 2_000        # Muestra si tarda más de 2 segundos
+style              = "bold #e0af68"
+format             = "[ $duration]($style) "
+show_milliseconds  = false
+
+# ── Carácter del prompt ───────────────────────────────────────
+[character]
+success_symbol = "[❯](bold #9ece6a)"   # Verde si éxito
+error_symbol   = "[❯](bold #f7768e)"   # Rojo si error
+vimcmd_symbol  = "[❮](bold #bb9af7)"   # Morado en modo vim
