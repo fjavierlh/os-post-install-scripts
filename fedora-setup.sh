@@ -527,8 +527,10 @@ EOF
 install_opencode() {
     log "OpenCode"
 
-    if command -v opencode &>/dev/null; then
-        ok "OpenCode ya instalado ($(opencode --version 2>/dev/null || echo 'versión desconocida')), saltando"
+    # Busca el binario directamente además de en el PATH del script (bash),
+    # ya que el instalador puede haberlo puesto en /usr/local/bin o ~/.local/bin
+    if command -v opencode &>/dev/null || [[ -x "/usr/local/bin/opencode" ]] || [[ -x "$HOME/.local/bin/opencode" ]]; then
+        ok "OpenCode ya instalado, saltando"
         return 0
     fi
 
@@ -539,19 +541,31 @@ install_opencode() {
     ok "OpenCode instalado. Lanza 'opencode' en cualquier directorio de proyecto."
 }
 
+install_gh() {
+    log "GitHub CLI (gh)"
+
+    if is_installed gh; then
+        ok "gh ya instalado ($(gh --version | head -1)), saltando"
+        return 0
+    fi
+
+    # Requiere dnf5-plugins para el subcomando addrepo
+    if ! is_installed dnf5-plugins; then
+        run "sudo dnf install -y dnf5-plugins"
+    fi
+
+    # Añadir repo oficial de GitHub CLI
+    local repo_file="/etc/yum.repos.d/gh-cli.repo"
+    if [[ ! -f "$repo_file" ]]; then
+        run "sudo dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo"
+    fi
+
+    run "sudo dnf install -y gh"
+
+    ok "gh instalado. Autentícate con: gh auth login"
+}
+
 # ---------- Plantilla para añadir nuevas apps ----------
-#
-# install_<app>() {
-#     log "<App>"
-#     if is_installed <paquete>; then
-#         ok "<App> ya instalado, saltando"
-#         return 0
-#     fi
-#     run "sudo dnf install -y <paquete>"
-#     ok "<App> instalado"
-# }
-#
-# Y luego añadir la llamada en main()
 
 # ---------- Main ----------
 main() {
@@ -574,6 +588,7 @@ main() {
     configure_starship    # después de oh-my-zsh: modifica .zshrc
     install_docker
     install_opencode
+    install_gh
     # install_<otra_app>
 
     ok "Setup completado"
