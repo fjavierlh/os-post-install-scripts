@@ -111,7 +111,7 @@ EOF
 install_nerd_fonts() {
     log "Nerd Fonts (JetBrainsMono)"
 
-    if [[ -d "$HOME/.local/share/fonts/JetBrainsMono" ]] && fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd Font"; then
+    if [[ -d "$HOME/.local/share/fonts/JetBrainsMono" ]]; then
         ok "JetBrainsMono Nerd Font ya instalada, saltando"
         return 0
     fi
@@ -150,8 +150,13 @@ configure_wezterm_lua() {
         return 0
     fi
 
+    # Solo desplegar si el fichero destino no existe o difiere del repo
+    if [[ -f "$config_file" ]] && diff -q "$source_file" "$config_file" &>/dev/null; then
+        ok "~/.wezterm.lua ya está actualizado, saltando"
+        return 0
+    fi
+
     if [[ -f "$config_file" ]]; then
-        warn "Ya existe $config_file. Se guardará backup en ${config_file}.bak"
         run "cp \"$config_file\" \"${config_file}.bak\""
     fi
 
@@ -427,12 +432,15 @@ configure_starship() {
         warn "No se encuentra $source_toml junto al script. Saltando config de Starship."
     else
         run "mkdir -p '$config_dir'"
-        if [[ -f "$target_toml" ]]; then
-            warn "Ya existe $target_toml. Se guardará backup en ${target_toml}.bak"
-            run "cp '$target_toml' '${target_toml}.bak'"
+        if [[ -f "$target_toml" ]] && diff -q "$source_toml" "$target_toml" &>/dev/null; then
+            ok "~/.config/starship.toml ya está actualizado, saltando"
+        else
+            if [[ -f "$target_toml" ]]; then
+                run "cp '$target_toml' '${target_toml}.bak'"
+            fi
+            run "cp '$source_toml' '$target_toml'"
+            ok "~/.config/starship.toml desplegado"
         fi
-        run "cp '$source_toml' '$target_toml'"
-        ok "~/.config/starship.toml desplegado"
     fi
 
     # 2) Desactivar tema de oh-my-zsh para que no compita con starship
